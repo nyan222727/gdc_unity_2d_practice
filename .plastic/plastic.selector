@@ -1,0 +1,4 @@
+repository "unity_2d_practice 2025-10-29_10-45-35/unity_2d_practice@33263068182472@cloud"
+  path "/"
+    br "/main"
+    co "/main"
