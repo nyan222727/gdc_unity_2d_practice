@@ -35,15 +35,38 @@ public class PlayerController : MonoBehaviour
 
     // 如果你想要改顏色
     public Image hpImage;  
+
+    public float invicibleTime = 0;
+
+    public GameObject playerObject;
+    public GameObject uiCanvas;
+
     
     void UpdateUI()
     {
-        float Percent = (float)hp / (float)maxhp;
-        hpImage.transform.localScale = new Vector3(Percent, 1, 1);
+        float hpPercent = (float)hp / (float)maxhp;
+        hpImage.transform.localScale = new Vector3(hpPercent, 1, 1);
     }
 
     void Start()
     {
+    //先判斷有沒有已經存在的角色? 如何搜尋物件？
+    var existsPlayerObject = GameObject.Find("Player");
+
+    //如果兩個不同，代表從其他地方來的
+    //如果相同，那就沒有外來的 player
+    if(existsPlayerObject != playerObject){
+
+        //刪掉新生成的玩家物件
+        Destroy(playerObject);
+        Destroy(uiCanvas);
+    }
+    else{
+        //不要刪掉
+        DontDestroyOnLoad(playerObject);
+        DontDestroyOnLoad(uiCanvas);
+    }
+    
         // Rigidbody 物理系統 通過物理幫我做移動，必須得到這個元件，我才能對它做運算。
         // 怎麼做，開一個接口。 1.rb 是剛才從編輯器拉進去的 Player 物件的 Rigidbody2D。 
         // 2. 動態抓取。 掛上我這個腳本的物件 => Player，讓他抓取 Rigidbody2D。
@@ -64,6 +87,22 @@ public class PlayerController : MonoBehaviour
 
     }
 
+    void DamageToPlayer(int damage)
+        {
+
+        if(invicibleTime > 0)
+        {
+            invicibleTime -= Time.deltaTime;
+        }
+            if (invicibleTime > 0)
+            {
+                return;
+            }
+            hp -= damage;
+            invicibleTime = 1; //不會倒數，必須讓他倒數
+            UpdateUI();
+        }
+
     void OnTriggerEnter2D(Collider2D col)
     {
         print("碰到Trigger:" + col.gameObject.name);
@@ -81,30 +120,59 @@ public class PlayerController : MonoBehaviour
             Destroy(col.gameObject);
         }
 
+        // void DamageToPlayer(int damage)
+        // {
+        //     if (invicibleTime > 0)
+        //     {
+        //         return;
+        //     }
+        //     hp -= damage;
+        //     invicibleTime = 1; //不會倒數，必須讓他倒數
+        //     UpdateUI();
+        // }
+
+
+
         if (col.gameObject.tag == "Trap")
         {
+            // 碰到的時候會一直觸發。 1.無敵貞 2.推力
             // 當我碰到刺的時候
-            hp -= 1;
+            // hp -= 1;
             // 血量變動了 -> 更新 UI 抓到，那我要抓到 UI 的圖片。
             // 1. 自動找
             // 2. 拉進來
 
             // 你碰到的時候他會一直觸發。 1. 無敵禎 2. 推力
-            UpdateUI();
+            // UpdateUI();
+            DamageToPlayer(1);
         }
 
         if(col.gameObject.tag == "Teleport")
         {
             // SceneManager.LoadScene(1);
+            //轉換場景 寫死了
             // SceneManager.LoadScene(1);
             SceneManager.LoadScene(col.gameObject.name);
-            //我想要動態改變重送位置，傳送物件名字拿來用。
+            // 技巧:我想要動態改變重送位置，傳送物件名字拿來用。
         }
     }
 
-    void OnCollisionStay2D(Collision2D collision)
+    void OnCollisionStay2D(Collision2D col)
     {
-        
+                if (col.gameObject.tag == "Trap")
+        {
+            // 碰到的時候會一直觸發。 1.無敵貞 2.推力
+            // 當我碰到刺的時候
+            // hp -= 1;
+            // 血量變動了 -> 更新 UI 抓到，那我要抓到 UI 的圖片。
+            // 1. 自動找
+            // 2. 拉進來
+
+            // 你碰到的時候他會一直觸發。 1. 無敵禎 2. 推力
+            // UpdateUI();
+            DamageToPlayer(1);
+        }
+
     }
 
     void DamageToPlayer()

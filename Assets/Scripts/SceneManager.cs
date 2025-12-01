@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.Timeline.Actions;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MySceneManager : MonoBehaviour
 {
@@ -26,10 +27,8 @@ public class MySceneManager : MonoBehaviour
         }
     }
 
-//寫在哪邊都 OK 
-    // public void BackToTown()
-    // {
-    //     // 切換場景
-    //     SceneManager.LoadScene("1");
-    // }
+    public void BackToTown()
+    {
+        SceneManager.LoadScene(2);
+    }
 }
