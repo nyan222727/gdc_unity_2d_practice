@@ -38,8 +38,9 @@ public class PlayerController : MonoBehaviour
 
     public float invicibleTime = 0;
 
-    public GameObject playerObject;
-    public GameObject uiCanvas;
+    public Vector2 respawnPoint;
+
+
 
     
     void UpdateUI()
@@ -50,29 +51,17 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-    //先判斷有沒有已經存在的角色? 如何搜尋物件？
-    var existsPlayerObject = GameObject.Find("Player");
-
-    //如果兩個不同，代表從其他地方來的
-    //如果相同，那就沒有外來的 player
-    if(existsPlayerObject != playerObject){
-
-        //刪掉新生成的玩家物件
-        Destroy(playerObject);
-        Destroy(uiCanvas);
-    }
-    else{
-        //不要刪掉
-        DontDestroyOnLoad(playerObject);
-        DontDestroyOnLoad(uiCanvas);
-    }
+        
     
         // Rigidbody 物理系統 通過物理幫我做移動，必須得到這個元件，我才能對它做運算。
         // 怎麼做，開一個接口。 1.rb 是剛才從編輯器拉進去的 Player 物件的 Rigidbody2D。 
         // 2. 動態抓取。 掛上我這個腳本的物件 => Player，讓他抓取 Rigidbody2D。
         rb = this.GetComponent<Rigidbody2D>();
         animator = this.GetComponent<Animator>();
-        cameraObject = Camera.main.gameObject;
+        // attempt to get current scene's main camera (may be null if scene has none)
+        cameraObject = Camera.main != null ? Camera.main.gameObject : null;
+        // keep camera reference up-to-date when scenes change
+        SceneManager.sceneLoaded += OnSceneLoaded;
 
     }
     // 你要監測事件就只少要有其中一方有 Rigidbody
@@ -152,8 +141,20 @@ public class PlayerController : MonoBehaviour
             // SceneManager.LoadScene(1);
             //轉換場景 寫死了
             // SceneManager.LoadScene(1);
-            SceneManager.LoadScene(col.gameObject.name);
-            // 技巧:我想要動態改變重送位置，傳送物件名字拿來用。
+            // SceneManager.LoadScene(col.gameObject.name);
+            // // 技巧:我想要動態改變重送位置，傳送物件名字拿來用。
+
+            //拿這個 Portal 元件的資訊
+        var portal = col.gameObject.GetComponent<Portal>();
+
+            //如果先傳送再轉換他會卡一偵
+            this.transform.position = portal.position;
+            // ?use the portal's transform position (the Portal component may not expose a Position property)
+
+            //創建一個變數，把我接下來要去的地方的位置記錄下來。
+            respawnPoint = portal.position;
+            SceneManager.LoadScene(portal.SceneName);
+        
         }
     }
 
@@ -175,15 +176,13 @@ public class PlayerController : MonoBehaviour
 
     }
 
-    void DamageToPlayer()
-    {
-
-    }
+    // removed empty parameterless DamageToPlayer()
     // 你要用
 
     // Update is called once per frame
     void Update()
     {
+        
         if (Input.GetKeyDown(KeyCode.Z))
         {
             // 你要在哪生成這個子彈物件？
@@ -242,8 +241,13 @@ public class PlayerController : MonoBehaviour
             animator.SetInteger("state", 0);
         }
         //注意 Camera Z 軸，還有不要變更我的攝影機的 Z 軸。
-        var newCameraPosition = new Vector3(this.transform.position.x, this.transform.position.y, this.cameraObject.transform.position.z);
-        cameraObject.transform.position = newCameraPosition;
+        
+        // follow the current scene camera if available
+        if (cameraObject != null)
+        {
+            var newCameraPosition = new Vector3(this.transform.position.x, this.transform.position.y, this.cameraObject.transform.position.z);
+            cameraObject.transform.position = newCameraPosition;
+        }
 
 
 
@@ -253,4 +257,15 @@ public class PlayerController : MonoBehaviour
         {
             print("UWU");
         }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // After a new scene loads, find the scene's main camera (if any)
+        cameraObject = Camera.main != null ? Camera.main.gameObject : null;
+    }
+
+    void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
 }
