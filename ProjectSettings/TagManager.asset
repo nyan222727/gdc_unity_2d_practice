@@ -9,6 +9,7 @@ TagManager:
   - Clip
   - Trap
   - Teleport
+  - DeadZone
   layers:
   - Default
   - TransparentFX

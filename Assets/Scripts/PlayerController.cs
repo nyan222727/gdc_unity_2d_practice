@@ -40,6 +40,15 @@ public class PlayerController : MonoBehaviour
 
     public Vector2 respawnPoint;
 
+    public GameObject uiObject;
+
+    public SpriteRenderer spriteRenderer;
+
+    public AudioSource seSource;
+    public AudioClip shootAudioClip;
+    public AudioClip damageClip;
+    
+
 
 
     
@@ -51,8 +60,10 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
+
+        seSource = this.transform.Find("SE").GetComponent<AudioSource>();
         
-    
+        spriteRenderer = this.GetComponent<SpriteRenderer>();
         // Rigidbody 物理系統 通過物理幫我做移動，必須得到這個元件，我才能對它做運算。
         // 怎麼做，開一個接口。 1.rb 是剛才從編輯器拉進去的 Player 物件的 Rigidbody2D。 
         // 2. 動態抓取。 掛上我這個腳本的物件 => Player，讓他抓取 Rigidbody2D。
@@ -82,11 +93,9 @@ public class PlayerController : MonoBehaviour
         if(invicibleTime > 0)
         {
             invicibleTime -= Time.deltaTime;
+            return;
         }
-            if (invicibleTime > 0)
-            {
-                return;
-            }
+
             hp -= damage;
             invicibleTime = 1; //不會倒數，必須讓他倒數
             UpdateUI();
@@ -156,6 +165,13 @@ public class PlayerController : MonoBehaviour
             SceneManager.LoadScene(portal.SceneName);
         
         }
+
+        if(col.gameObject.tag == "DeadZone")
+        {
+
+            DamageToPlayer(5);
+            this.transform.position = respawnPoint;
+            }
     }
 
     void OnCollisionStay2D(Collision2D col)
@@ -188,6 +204,13 @@ public class PlayerController : MonoBehaviour
             // 你要在哪生成這個子彈物件？
             if (bulletCount >= 1)
             {
+                // // 他會暫停再撥放
+                seSource.clip = shootAudioClip;
+                seSource.Play();
+
+                // 音效比較長，會疊在一起。
+                // PlayerOneShot可以讓音訊撥放互不影響。
+                // seSource.PlayOneShot(shootAudioClip);// 先 Stop 再播。
                 GameObject newObject = Instantiate(bulletPrefab, this.transform.position, Quaternion.Euler(new Vector3(0, 0, 90)));
                 Rigidbody2D newRb = newObject.GetComponent<Rigidbody2D>();
                 newRb.AddForce(new Vector2(20, 5), ForceMode2D.Impulse);
@@ -213,6 +236,7 @@ public class PlayerController : MonoBehaviour
         // 如果使用物理系統，使用物理系統移動比較好。
         if (Input.GetKey(KeyCode.D))
         {
+            spriteRenderer.flipX = false;
             //想操作腳本掛上去的那個 Transform 位置。
             // print("向右走");
             // this.transform.position += new Vector3(0.01f, 0, 0);
@@ -226,6 +250,7 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetKey(KeyCode.A))
         {
+            spriteRenderer.flipX = true;
             // print("向左走");
             // this.transform.position -= new Vector3(0.01f, 0, 0);
             // rb.AddForce(new Vector2(-0.1f, 0), ForceMode2D.Impulse);
@@ -238,6 +263,7 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetKeyUp(KeyCode.A) || Input.GetKeyUp(KeyCode.D))
         {
+            rb.velocity = new Vector2(0, rb.velocity.y);
             animator.SetInteger("state", 0);
         }
         //注意 Camera Z 軸，還有不要變更我的攝影機的 Z 軸。
@@ -249,14 +275,25 @@ public class PlayerController : MonoBehaviour
             cameraObject.transform.position = newCameraPosition;
         }
 
-
+        if (this.hp <= 0) {
+            Destroy(this.uiObject);
+            Destroy(this.gameObject);
+            SceneManager.LoadScene("StartScene");
+        }
 
     }
+
+    
+
+
+
+
     
     void AnimationCallback()
         {
             print("UWU");
         }
+        
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
