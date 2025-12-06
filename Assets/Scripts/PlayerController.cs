@@ -5,6 +5,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI; // 想要引用 UI 文件就要使用這個 namespace
+using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
@@ -49,6 +50,9 @@ public class PlayerController : MonoBehaviour
     public AudioClip damageClip;
 
     public GameObject hitEffectPrefab;
+
+    public float controlMoveVal;
+    
     
 
 
@@ -206,42 +210,42 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         
-        if (Input.GetKeyDown(KeyCode.Z))
-        {
-            // 你要在哪生成這個子彈物件？
-            if (bulletCount >= 1)
-            {
-                // // 他會暫停再撥放
-                seSource.clip = shootAudioClip;
-                seSource.Play();
+        // if (Input.GetKeyDown(KeyCode.Z))
+        // {
+        //     // 你要在哪生成這個子彈物件？
+        //     if (bulletCount >= 1)
+        //     {
+        //         // // 他會暫停再撥放
+        //         seSource.clip = shootAudioClip;
+        //         seSource.Play();
 
-                // 音效比較長，會疊在一起。
-                // PlayerOneShot可以讓音訊撥放互不影響。
-                // seSource.PlayOneShot(shootAudioClip);// 先 Stop 再播。
-                GameObject newObject = Instantiate(bulletPrefab, this.transform.position, Quaternion.Euler(new Vector3(0, 0, 90)));
-                Rigidbody2D newRb = newObject.GetComponent<Rigidbody2D>();
-                newRb.AddForce(new Vector2(20, 5), ForceMode2D.Impulse);
-                // 發射子彈 -Prefab 預處理物件 => 你的子彈的圖片？有哪些腳本？有哪些元件 => 製作成 Prefab
-                // How to recycle bullet. => We use time.
-                bulletCount--;
-            }
+        //         // 音效比較長，會疊在一起。
+        //         // PlayerOneShot可以讓音訊撥放互不影響。
+        //         // seSource.PlayOneShot(shootAudioClip);// 先 Stop 再播。
+        //         GameObject newObject = Instantiate(bulletPrefab, this.transform.position, Quaternion.Euler(new Vector3(0, 0, 90)));
+        //         Rigidbody2D newRb = newObject.GetComponent<Rigidbody2D>();
+        //         newRb.AddForce(new Vector2(20, 5), ForceMode2D.Impulse);
+        //         // 發射子彈 -Prefab 預處理物件 => 你的子彈的圖片？有哪些腳本？有哪些元件 => 製作成 Prefab
+        //         // How to recycle bullet. => We use time.
+        //         bulletCount--;
+        //     }
 
-        }
+        // }
 
-        if (Input.GetKeyDown(KeyCode.W) && jumpCount >= 1)
-        {
+        // if (Input.GetKeyDown(KeyCode.W) && jumpCount >= 1)
+        // {
 
-            rb.AddForce(new Vector2(0, 10), ForceMode2D.Impulse);
-            // rockGameObject.transform.position += new Vector3(0, 0.01f, 0);
+        //     rb.AddForce(new Vector2(0, 10), ForceMode2D.Impulse);
+        //     // rockGameObject.transform.position += new Vector3(0, 0.01f, 0);
 
-            jumpCount -= 1;
-            print("W");
-            // animator.SetTrigger("jump");
-            animator.SetInteger("state", 2);
-        }
+        //     jumpCount -= 1;
+        //     print("W");
+        //     // animator.SetTrigger("jump");
+        //     animator.SetInteger("state", 2);
+        // }
         // 輸入檢測：GetKey 檢查按下的狀態，GetKeyDown 檢查按下的那個瞬間。
         // 如果使用物理系統，使用物理系統移動比較好。
-        if (Input.GetKey(KeyCode.D))
+        if (controlMoveVal > 0)
         {
             spriteRenderer.flipX = false;
             //想操作腳本掛上去的那個 Transform 位置。
@@ -255,7 +259,7 @@ public class PlayerController : MonoBehaviour
             animator.SetInteger("state", 1);
         }
 
-        if (Input.GetKey(KeyCode.A))
+        if (controlMoveVal < 0)
         {
             spriteRenderer.flipX = true;
             // print("向左走");
@@ -298,7 +302,7 @@ public class PlayerController : MonoBehaviour
     
     void AnimationCallback()
         {
-            print("UWU");
+            // print("UWU");
         }
         
 
@@ -312,4 +316,97 @@ public class PlayerController : MonoBehaviour
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
+
+
+    // 新的 InputSystem 觸發的事件
+    public void Jump(InputAction.CallbackContext ctx)
+    {
+        // 他觸發 3 次 他分成三個階段，在符合條件 Performed 時，我再處理。
+        // 為啥分三階段，我可以設置 eg 連點 hold 多少秒才觸發，有更多彈性去設置輸入。
+        if (ctx.performed)
+        {
+            print("uwu");
+            if(jumpCount >= 1)
+            {
+                rb.AddForce(new Vector2(0, 10), ForceMode2D.Impulse);
+                jumpCount -= 1;
+                animator.SetInteger("status", 2);
+            }
+        }
+    }
+
+    public void Shoot(InputAction.CallbackContext ctx)
+    {
+        if (ctx.performed)
+        {
+
+            // 你要在哪生成這個子彈物件？
+            if (bulletCount >= 1)
+            {
+                // // 他會暫停再撥放
+                seSource.clip = shootAudioClip;
+                seSource.Play();
+
+                // 音效比較長，會疊在一起。
+                // PlayerOneShot可以讓音訊撥放互不影響。
+                // seSource.PlayOneShot(shootAudioClip);// 先 Stop 再播。
+                GameObject newObject = Instantiate(bulletPrefab, this.transform.position, Quaternion.Euler(new Vector3(0, 0, 90)));
+                Rigidbody2D newRb = newObject.GetComponent<Rigidbody2D>();
+                newRb.AddForce(new Vector2(20, 5), ForceMode2D.Impulse);
+                // 發射子彈 -Prefab 預處理物件 => 你的子彈的圖片？有哪些腳本？有哪些元件 => 製作成 Prefab
+                // How to recycle bullet. => We use time.
+                bulletCount--;
+            }
+
+        
+        }
+    }
+
+    public void Move(InputAction.CallbackContext ctx)
+    {
+        // 只會觸發一次
+        // 處理 用變數紀錄他的狀態
+        if (ctx.performed)
+        {
+            controlMoveVal = ctx.ReadValue<float>();
+
+            // 我要怎麼知道他觸發多少？ 左移動？ 右移動？
+            // 
+            // var data = ctx.ReadValue<float>();
+            // print(data);
+
+            
+            // 只會觸發一次
+            // 處理 用變數紀錄他的狀態
+            // if (data > 0)
+            // {
+            //     spriteRenderer.flipX = false;
+            //     rb.velocity = new Vector2(speed * data, rb.velocity.y);
+            //     animator.SetInteger("status", 1);
+            //     print(speed * data);
+            // }
+            // if (data < 0)
+            // {
+            //     spriteRenderer.flipX = true;
+            //     rb.velocity = new Vector2(speed * data, rb.velocity.y);
+            //     animator.SetInteger("status", 1);
+            //     print(speed * data);
+            // }
+        
+        }
+        if (ctx.canceled )
+        {
+            controlMoveVal = 0;
+            rb.velocity = new Vector2(0, rb.velocity.y);
+            animator.SetInteger("status", 0);
+        }
+    }
+
+
+    
+
+
+
 }
+
+
