@@ -397,6 +397,8 @@ public class PlayerController : MonoBehaviour
         if (ctx.canceled )
         {
             controlMoveVal = 0;
+
+            // 放開的時候我就重設動畫
             rb.velocity = new Vector2(0, rb.velocity.y);
             animator.SetInteger("status", 0);
         }
