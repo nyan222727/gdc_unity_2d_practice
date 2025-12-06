@@ -47,6 +47,8 @@ public class PlayerController : MonoBehaviour
     public AudioSource seSource;
     public AudioClip shootAudioClip;
     public AudioClip damageClip;
+
+    public GameObject hitEffectPrefab;
     
 
 
@@ -90,12 +92,17 @@ public class PlayerController : MonoBehaviour
     void DamageToPlayer(int damage)
         {
 
+        
+
         if(invicibleTime > 0)
         {
             invicibleTime -= Time.deltaTime;
             return;
         }
-
+            
+            // 我在受傷的時候，要在我這角色的位置，生成受傷特效。   
+            Instantiate(hitEffectPrefab, this.transform.position, Quaternion.identity);
+            
             hp -= damage;
             invicibleTime = 1; //不會倒數，必須讓他倒數
             UpdateUI();
